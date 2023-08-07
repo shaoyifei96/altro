@@ -10,16 +10,16 @@ list(POP_BACK CMAKE_MESSAGE_CONTEXT)
 
 
 # Add Eigen
-list(APPEND CMAKE_MESSAGE_CONTEXT eigen)
-set(EIGEN_BUILD_DOC OFF CACHE BOOL "Enable creation of Eigen documentation." FORCE)
-set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Enable creation of Eigen tests." FORCE)
-FetchContent_Declare(eigen
-  GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-  # GIT_TAG 3147391d946bb4b6c68edd901f2add6ac1f31f8c  # version 3.4.0
-  GIT_TAG 5527e78a64773a84c96c035d4c77b68c9db4f8ad #latest
-  )
-FetchContent_MakeAvailable(eigen)
-list(POP_BACK CMAKE_MESSAGE_CONTEXT)
+# list(APPEND CMAKE_MESSAGE_CONTEXT eigen)
+# set(EIGEN_BUILD_DOC OFF CACHE BOOL "Enable creation of Eigen documentation." FORCE)
+# set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Enable creation of Eigen tests." FORCE)
+# FetchContent_Declare(eigen
+#   GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+#   # GIT_TAG 3147391d946bb4b6c68edd901f2add6ac1f31f8c  # version 3.4.0
+#   GIT_TAG 5527e78a64773a84c96c035d4c77b68c9db4f8ad #latest
+#   )
+# FetchContent_MakeAvailable(eigen)
+# list(POP_BACK CMAKE_MESSAGE_CONTEXT)
 
 # ArduinoEigen
 if (ALTRO_ENABLE_ARDUINO_LIB_INSTALL)

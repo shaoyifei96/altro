@@ -55,7 +55,7 @@ if (ALTRO_CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 # Documentation
-option(ALTRO_BUILD_DOCS "Build documentation for altro." ON)
+option(ALTRO_BUILD_DOCS "Build documentation for altro." OFF)
 
 # Use -fPIC option
 #option(ALTRO_POSITION_INDEPENDENT_CODE "Use -fPIC flag when compiling altro" ON)
@@ -84,6 +84,7 @@ cmake_print_variables(ALTRO_ARDUINO_LIB_INSTALL_DIR)
 # Dependencies
 #############################################
 add_subdirectory(deps)
+find_package (Eigen3 3.4 REQUIRED)
 #############################################
 # Documentation
 #############################################
@@ -99,7 +100,7 @@ endif()
 #############################################
 
 # Output all binaries
-add_compile_options(-Wall -Wextra -march=native)
+add_compile_options(-Wall -Wextra)
 add_subdirectory(src)
 
 #############################################
