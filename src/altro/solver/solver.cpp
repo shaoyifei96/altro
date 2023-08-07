@@ -286,7 +286,6 @@ ErrorCodes SolverImpl::ForwardPass(a_float* alpha) {
       data_[k].CalcCostGradient();
     }
   }
-  // std::cout << "End Forward Pass" << std::endl;
 
   if (std::isnan(*alpha) || !(res == linesearch::CubicLineSearch::ReturnCodes::MINIMUM_FOUND ||
                               res == linesearch::CubicLineSearch::ReturnCodes::HIT_MAX_STEPSIZE)) {

@@ -6,6 +6,7 @@
 #pragma once
 
 #include <functional>
+#include <string>
 
 namespace altro {
 
@@ -25,6 +26,27 @@ enum class SolveStatus {
   InputOutOfBounds,
   MeritFunGradientTooSmall,
 };
+
+// std::string colorToString(SolveStatus status) {
+//     switch (status) {
+//         case SolveStatus::Success:
+//             return "SUCCESS";
+//         case SolveStatus::Unsolved:
+//             return "UNSOLVED";
+//         case SolveStatus::MaxIterations:
+//             return "MAX_ITERATIONS";
+//         case SolveStatus::MaxObjectiveExceeded:
+//             return "MAX_OBJECTIVE_EXCEEDED";
+//         case SolveStatus::StateOutOfBounds:
+//             return "STATE_OUT_OF_BOUNDS";
+//         case SolveStatus::InputOutOfBounds:
+//             return "INPUT_OUT_OF_BOUNDS";
+//         case SolveStatus::MeritFunGradientTooSmall:
+//             return "MERIT_FUN_GRADIENT_TOO_SMALL";
+//         default:
+//             return "UNKNOWN";
+//     }
+// }
 
 using CallbackFunction = std::function<void(const ALTROSolver*)>;
 

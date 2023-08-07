@@ -15,7 +15,8 @@ set(EIGEN_BUILD_DOC OFF CACHE BOOL "Enable creation of Eigen documentation." FOR
 set(EIGEN_BUILD_TESTING OFF CACHE BOOL "Enable creation of Eigen tests." FORCE)
 FetchContent_Declare(eigen
   GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-  GIT_TAG 3147391d946bb4b6c68edd901f2add6ac1f31f8c  # version 3.4.0
+  # GIT_TAG 3147391d946bb4b6c68edd901f2add6ac1f31f8c  # version 3.4.0
+  GIT_TAG 5527e78a64773a84c96c035d4c77b68c9db4f8ad #latest
   )
 FetchContent_MakeAvailable(eigen)
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
@@ -40,11 +41,11 @@ FetchContent_Declare(json
 FetchContent_MakeAvailable(json)
 list(POP_BACK CMAKE_MESSAGE_CONTEXT)
 
-## AltroCpp
-#list(APPEND CMAKE_MESSAGE_CONTEXT altrocpp)
-#FetchContent_Declare(altrocpp
+# AltroCpp
+# list(APPEND CMAKE_MESSAGE_CONTEXT altrocpp)
+# FetchContent_Declare(altrocpp
 #  GIT_REPOSITORY https://github.com/bjack205/altro-cpp.git
 #  GIT_TAG edf246b0a1f9584cfb9ccf9f30afade6b039d2a7
 #  )
-#FetchContent_MakeAvailable(altrocpp)
-#list(POP_BACK CMAKE_MESSAGE_CONTEXT)
+# FetchContent_MakeAvailable(altrocpp)
+# list(POP_BACK CMAKE_MESSAGE_CONTEXT)

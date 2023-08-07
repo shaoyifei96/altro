@@ -15,7 +15,9 @@ set(ORGANIZATION_NAME "rexlab")
 # Include needed modules
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include(CMakePrintHelpers)
+message(STATUS "GOOD-1")
 include(FetchContent)
+message(STATUS "GOOD0")
 include(AltroCMakeFunctions)
 include(FindThreads)
 include(GNUInstallDirs)
@@ -31,7 +33,7 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE ${ALTRO_DEFAULT_BUILD_TYPE} CACHE STRING "Choose the type of build." FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
-
+message(STATUS "GOOD1")
 # Enable testing
 option(ALTRO_BUILD_TESTS "Build tests for altro" ON)
 if (${ALTRO_BUILD_TESTS})
@@ -44,7 +46,7 @@ if (${ALTRO_BUILD_TESTS})
   include(GoogleTest)
   include(CTest)
 endif()
-
+message(STATUS "GOOD2")
 # Code Coverage
 option(ALTRO_CODECOV "Compile altro with code coverage" OFF)
 if (ALTRO_CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
@@ -53,7 +55,7 @@ if (ALTRO_CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 # Documentation
-option(ALTRO_BUILD_DOCS "Build documentation for altro." OFF)
+option(ALTRO_BUILD_DOCS "Build documentation for altro." ON)
 
 # Use -fPIC option
 #option(ALTRO_POSITION_INDEPENDENT_CODE "Use -fPIC flag when compiling altro" ON)
@@ -64,14 +66,14 @@ if (BUILD_SHARED_LIBS)
 else()
   message(STATUS "Building static library. Note that a shared library is recommended.")
 endif()
-
+message(STATUS "GOOD3")
 # Set default install prefix to /opt/rexlab/altro
 if(NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND PROJECT_IS_TOP_LEVEL)
   message(STATUS "Setting Altro install prefix to /opt/${ORGANIZATION_NAME}/${PROJECT_NAME}")
   set(CMAKE_INSTALL_PREFIX "/opt/${ORGANIZATION_NAME}/${PROJECT_NAME}" CACHE FILEPATH "Base install location" FORCE)
   set(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OFF)
 endif()
-
+message(STATUS "GOOD4")
 # Arduino library installation
 option(ALTRO_ENABLE_RUNTIME_EXCEPTIONS "Enable C++ runtime exceptions. If disabled, error return codes will be returned instead." OFF)
 option(ALTRO_ENABLE_ARDUINO_LIB_INSTALL "Add the install_arduino_lib target"  OFF)
@@ -82,7 +84,6 @@ cmake_print_variables(ALTRO_ARDUINO_LIB_INSTALL_DIR)
 # Dependencies
 #############################################
 add_subdirectory(deps)
-
 #############################################
 # Documentation
 #############################################
@@ -98,7 +99,7 @@ endif()
 #############################################
 
 # Output all binaries
-add_compile_options(-Wall -Wextra -Werror -march=native)
+add_compile_options(-Wall -Wextra -march=native)
 add_subdirectory(src)
 
 #############################################
@@ -115,3 +116,6 @@ endif()
 # Installation
 #############################################
 add_subdirectory(install)
+
+add_subdirectory(applications)
+

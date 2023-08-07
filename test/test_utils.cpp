@@ -9,6 +9,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <iostream>
+#include "../applications/finitediff.hpp"
 
 #include "nlohmann/json.hpp"
 
@@ -346,6 +348,280 @@ void SimpleQuaternionModel::Jacobian(double *jac, const double *x, const double 
        wy / 2, -wz / 2, 0, wx / 2, qc / 2, qs / 2, -qa / 2,
        wz / 2, wy / 2, -wx / 2, 0, -qb / 2, qa / 2, qs / 2;
 }
+
+Eigen::Vector3d quadModel::moments( const Eigen::VectorXd& u) const {
+    double L = motor_dist_;
+
+    double w1 = u[0];
+    double w2 = u[1];
+    double w3 = u[2];
+    double w4 = u[3];
+
+    double F1 = std::max(0.0, kf_ * w1);
+    double F2 = std::max(0.0, kf_ * w2);
+    double F3 = std::max(0.0, kf_ * w3);
+    double F4 = std::max(0.0, kf_ * w4);
+
+    double M1 = km_ * w1;
+    double M2 = km_ * w2;
+    double M3 = km_ * w3;
+    double M4 = km_ * w4;
+
+    Eigen::Vector3d tau;
+    tau << L * (F2 - F4), L * (F3 - F1), (M1 - M2 + M3 - M4);
+
+    return tau;
+}
+
+
+
+Eigen::Vector3d quadModel::forces( const Eigen::VectorXd& u) const {
+    double w1 = u[0];
+    double w2 = u[1];
+    double w3 = u[2];
+    double w4 = u[3];
+
+    double F1 = std::max(0.0, kf_ * w1);
+    double F2 = std::max(0.0, kf_ * w2);
+    double F3 = std::max(0.0, kf_ * w3);
+    double F4 = std::max(0.0, kf_ * w4);
+
+    Eigen::Vector3d F;
+    F << 0.0, 0.0, F1 + F2 + F3 + F4; // total rotor force in body frame
+    return F;
+}
+
+void quadModel::Dynamics(double *x_dot, const double *x, const double *u) const {
+  // std::cout << "section 0 success "  << std::endl;
+
+  Eigen::Map<Eigen::VectorXd> x_dot_vec(x_dot, 13);
+  Eigen::Map<const Eigen::VectorXd> x_vec(x, 13);
+  Eigen::Map<const Eigen::VectorXd> u_vec(u, 4);
+
+  const double robot_mass = mass_;
+  Eigen::Vector3d g_vec;
+  g_vec << 0, 0, -9.81;
+
+  // std::cout << "section 1 success "  << std::endl;
+
+  Eigen::Vector3d moment_body = moments(u_vec);
+  Eigen::Vector3d force_body  = forces(u_vec);
+
+  // std::cout << "section 2 success "  << std::endl;
+
+// state: pos(world) quat(world->body) vel(body) omega(body)
+//        0 1 2      3  4  5  6        7 8 9     10 11 12
+  Eigen::Vector4d q = x_vec.segment<4>(3).normalized();
+  Eigen::Vector3d vb= x_vec.segment<3>(7);
+  Eigen::Vector3d w = x_vec.segment<3>(10);
+  // std::cout << "section 3 success "  << std::endl;
+
+  Eigen::Matrix3d Q = altro::Q(q);
+  // change rate of position
+  x_dot_vec.segment<3>(0) = Q*vb;
+
+  // change rate of quaternion
+  // std::cout << "section 4 success "  << std::endl;
+
+  x_dot_vec.segment<4>(3) = 0.5 * altro::G(q) * w;
+  // std::cout << "section 5 success "  << std::endl;
+
+  // change rate of linear velocity
+
+  x_dot_vec.segment<3>(7) = Q.transpose() * g_vec + force_body / robot_mass - w.cross(vb);
+  // std::cout << "section 6 success "  << std::endl;
+
+  // change rate of angular velocity
+  x_dot_vec.segment<3>(10) = moment_of_inertia_.inverse() * (moment_body -  w.cross(moment_of_inertia_ *  w));
+  // std::cout << "section 7 success "  << std::endl;
+
+}
+
+
+void quadModel::finite_jacobian_quad_xu(double *jac, const double *x, const double *u) const{
+  // Eigen::Map<Eigen::VectorXd> x_dot_vec(x_dot, 13);
+  Eigen::Map<const Eigen::VectorXd> x_vec(x, 13);
+  Eigen::Map<const Eigen::VectorXd> u_vec(u, 4);
+  Eigen::Map<Eigen::Matrix<double, 13, 17>> J(jac);  // jac = [dfc_dx, dfc_du]
+
+  Eigen::MatrixXd dfc_dx(13, 13);
+  Eigen::MatrixXd dfc_du(13, 4);
+
+  const double eps = 1e-6;
+  fd::AccuracyOrder accuracy = fd::EIGHTH;
+  const std::vector<double> external_coeffs = fd::get_external_coeffs(accuracy);
+  const std::vector<double> internal_coeffs = fd::get_interior_coeffs(accuracy);
+  assert(external_coeffs.size() == internal_coeffs.size());
+  const size_t inner_steps = internal_coeffs.size();
+  const double denom = get_denominator(accuracy) * eps;
+  J.setZero();
+  dfc_dx.setZero();
+  dfc_du.setZero();
+  // std::cout<< "number of rows" << x_vec.rows()<<std::endl;
+  // std::cout<< "Inner steps" << inner_steps<<std::endl;
+  // std::cout<< "dfc_dx.col(7)"<<dfc_dx.col(7)<<std::endl;
+
+  Eigen::VectorXd x_mutable = x_vec;
+    for (size_t i = 0; i < x_vec.rows(); i++) {
+        for (size_t ci = 0; ci < inner_steps; ci++) {
+            x_mutable[i] += internal_coeffs[ci] * eps;
+            //normalize quaternion
+            x_mutable.segment<4>(3).normalize();
+            Eigen::VectorXd fx(13);
+
+            Dynamics(fx.data(),x_mutable.data(), u);
+            
+            dfc_dx.col(i) += external_coeffs[ci] * fx;
+            for (size_t j = 0; j < x_vec.rows(); j++) {
+                x_mutable[j] = x_vec[j];
+                //reset x_mutable, it is unclear if quat will make things weird, so just reset everything
+            }
+        }
+        dfc_dx.col(i) /= denom;
+    }
+
+  Eigen::VectorXd u_mutable = u_vec;
+    for (size_t i = 0; i < u_vec.rows(); i++) {
+        for (size_t ci = 0; ci < inner_steps; ci++) {
+            u_mutable[i] += internal_coeffs[ci] * eps;
+            Eigen::VectorXd fx(13);
+
+            Dynamics(fx.data(),x, u_mutable.data());
+            dfc_du.col(i) += external_coeffs[ci] * fx;
+            u_mutable[i] = u_vec[i];
+        }
+        dfc_du.col(i) /= denom;
+    }
+  
+  //make all values < 1e-10 equal to zero
+  for (size_t i = 0; i < dfc_dx.rows(); i++) {
+    for (size_t j = 0; j < dfc_dx.cols(); j++) {
+      if (std::abs(dfc_dx(i,j)) < 1e-8) {
+        dfc_dx(i,j) = 0;
+      }
+    }
+  }
+  J.block<13, 13>(0, 0) = dfc_dx;
+  J.block<13, 4>(0, 13) = dfc_du;
+}
+
+//     // auto myOneArgFunction = [this, u_vec](const Eigen::VectorXd x_in) { f_quad( x_in, u_vec); };
+
+//     const std::vector<double> external_coeffs = get_external_coeffs(accuracy);
+//     const std::vector<double> internal_coeffs = get_interior_coeffs(accuracy);
+
+//     assert(external_coeffs.size() == internal_coeffs.size());
+//     const size_t inner_steps = internal_coeffs.size();
+
+//     const double denom = get_denominator(accuracy) * eps;
+
+//     jac.setZero(f(x).rows(), x.rows());
+
+//     Eigen::VectorXd x_mutable = x;
+//     for (size_t i = 0; i < x.rows(); i++) {
+//         for (size_t ci = 0; ci < inner_steps; ci++) {
+//             x_mutable[i] += internal_coeffs[ci] * eps;
+//             jac.col(i) += external_coeffs[ci] * model->f_quad(x_mutable, u);
+//             x_mutable[i] = x[i];
+//         }
+//         jac.col(i) /= denom;
+//     }
+// }
+
+void quadModel::Jacobian_fd(double *jac, const double *x, const double *u) const {
+
+  finite_jacobian_quad_xu(jac, x, u);
+
+
+}
+void quadModel::Jacobian(double *jac, const double *x, const double *u) const {
+  Eigen::Map<Eigen::Matrix<double, 13, 17>> J(jac);  // jac = [dfc_dx, dfc_du]
+  J.setZero();
+
+  Eigen::Map<const Eigen::VectorXd> x_vec(x, 13);
+  Eigen::Map<const Eigen::VectorXd> u_vec(u, 4);
+
+  Eigen::Vector4d q = x_vec.segment<4>(3).normalized();
+  Eigen::Vector3d vb= x_vec.segment<3>(7);
+  Eigen::Vector3d w = x_vec.segment<3>(10);
+  Eigen::Matrix3d Q = altro::Q(q);
+  Eigen::Vector4d inv_q = altro::quat_conj(q);
+
+  const double robot_mass = mass_;
+  Eigen::Vector3d g_vec;
+  g_vec << 0, 0, -9.81;
+
+  // Calculate dfc_dx
+  Eigen::MatrixXd dfc_dx(13, 13);
+  dfc_dx.setZero();
+  // dvw/dq ????
+  Eigen::MatrixXd dQdq = altro::dQdq(q);
+                            //1 x 3             3x4
+  dfc_dx.block<1, 4>(0, 3) = (vb.transpose() * dQdq.block<3, 4>(0, 0));
+  dfc_dx.block<1, 4>(1, 3) = (vb.transpose() * dQdq.block<3, 4>(3, 0));
+  dfc_dx.block<1, 4>(2, 3) = (vb.transpose() * dQdq.block<3, 4>(6, 0));
+
+  // dvw/dvb
+  dfc_dx.block<3, 3>(0, 7) = Q;
+  // dqdot/dq
+  dfc_dx.block<1, 3>(3, 4) = -0.5 * w.transpose();
+  dfc_dx.block<3, 1>(4, 3) = 0.5 * w;
+  dfc_dx.block<3, 3>(4, 4) = -0.5 * altro::skew(w);
+  // dqdot/domega // is this just 0.5*G(q)? 
+  dfc_dx(3, 10) = -0.5 * x_vec(4);  // -0.5qa
+  dfc_dx(3, 11) = -0.5 * x_vec(5);  // -0.5qb
+  dfc_dx(3, 12) = -0.5 * x_vec(6);  // -0.5qc
+  dfc_dx(4, 10) = 0.5 * x_vec(3);   // 0.5qs
+  dfc_dx(4, 11) = -0.5 * x_vec(6);  // -0.5qc
+  dfc_dx(4, 12) = 0.5 * x_vec(5);   // 0.5qb
+  dfc_dx(5, 10) = 0.5 * x_vec(6);   // 0.5qc
+  dfc_dx(5, 11) = 0.5 * x_vec(3);   // 0.5qs
+  dfc_dx(5, 12) = -0.5 * x_vec(4);  // -0.5qa
+  dfc_dx(6, 10) = -0.5 * x_vec(5);  // -0.5qb
+  dfc_dx(6, 11) = 0.5 * x_vec(4);   // 0.5qa
+  dfc_dx(6, 12) = 0.5 * x_vec(3);   // 0.5qs
+  //dvbdot/dq // ADDED - sign here, not sure if correct
+  Eigen::MatrixXd dQinv_dq = altro::dQdq(inv_q);
+  dfc_dx.block<1, 4>(7, 3) = -(g_vec.transpose() * dQinv_dq.block<3, 4>(0, 0));
+  dfc_dx.block<1, 4>(8, 3) = -(g_vec.transpose() * dQinv_dq.block<3, 4>(3, 0));
+  dfc_dx.block<1, 4>(9, 3) = -(g_vec.transpose() * dQinv_dq.block<3, 4>(6, 0));
+
+
+  // dvbdot/dvb
+  dfc_dx.block<3, 3>(7, 7) = -altro::skew(w);
+  // dvbdot/domega
+  dfc_dx.block<3, 3>(7, 10) = altro::skew(vb);
+
+  // domegadot/domega
+  dfc_dx.block<3, 3>(10, 10) =
+      -moment_of_inertia_.inverse() * (altro::skew(w) * moment_of_inertia_ -
+                                 altro::skew(moment_of_inertia_ * w));
+
+/////////////////////////////////////////////////////////////////////////////////////
+  // Calculate dfc_du
+  Eigen::MatrixXd dfc_du(13, 4);
+  dfc_du.setZero();
+
+  // dvw/du
+  Eigen::Vector4d u_vec_sign;
+  for (int i = 0; i < 4; ++i) {
+    u_vec_sign(i) = u_vec(i) > 0 ? 1 : 0;
+  }
+  dfc_du.block<1, 4>(9, 0) = (1 / robot_mass * kf_) * u_vec_sign;
+
+  // dw_dot/du
+  Eigen::Matrix<double, 3,4> Fmat = forceMatrix().block<3, 4>(1, 0);
+  Fmat.block<2,4>(0,0) = Fmat.block<2,4>(0,0).array().rowwise() * u_vec_sign.transpose().array();
+
+  dfc_du.block<3, 4>(10, 0)  =  moment_of_inertia_.inverse() * Fmat;
+  //
+
+  // Get Jacobian
+  J.block<13, 13>(0, 0) = dfc_dx;
+  J.block<13, 4>(0, 13) = dfc_du;
+
+}
+
 
 void QuadrupedQuaternionModel::Dynamics(double *x_dot, const double *x, const double *u,
                                         Eigen::Matrix<double, 3, 4> foot_pos_body,

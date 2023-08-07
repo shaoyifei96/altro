@@ -61,6 +61,50 @@ class BicycleModel {
   double distance_to_rear_wheels_ = 1.5;
 };
 
+
+class quadModel {
+ public:
+  enum class ReferenceFrame { CenterOfGravity, Rear, Front };
+
+  explicit quadModel(ReferenceFrame frame = ReferenceFrame::CenterOfGravity)
+      : reference_frame_(frame) {}
+
+  void Dynamics(double *x_dot, const double *x, const double *u) const;
+  void Jacobian(double *jac, const double *x, const double *u) const;
+  void Jacobian_fd(double *jac, const double *x, const double *u) const;
+  Eigen::Vector3d moments( const Eigen::VectorXd& u) const;
+  Eigen::Vector3d forces(  const Eigen::VectorXd& u) const;
+  // Eigen::VectorXd f_quad(const Eigen::VectorXd& x_vec, const Eigen::VectorXd& u_vec) const;
+  // void finite_jacobian(const Eigen::Ref<const Eigen::VectorXd>& x,
+  //   const std::function<Eigen::VectorXd(const Eigen::VectorXd&)>& f,
+  //   Eigen::MatrixXd& jac,
+  //   const double eps);
+  void finite_jacobian_quad_xu(double *jac, const double *x, const double *u) const;
+  
+  static constexpr int NumStates = 13;
+  static constexpr int NumInputs = 4;
+  double get_hover_input() const {return mass_ *9.81/4.0/ kf_;}
+
+ private:
+  ReferenceFrame reference_frame_;
+  double motor_dist_ = 0.4;
+  double mass_ = 1.5;
+  double kf_ = 1;
+  double km_ = 0.0245;
+  Eigen::Matrix3d moment_of_inertia_ = Eigen::Matrix3d::Identity();
+  Eigen::Matrix4d forceMatrix() const {
+    double L = motor_dist_;
+
+    Eigen::Matrix4d SMatrix;
+    SMatrix << kf_,   kf_,   kf_,   kf_,
+               0,    L*kf_, 0,    -L*kf_,
+               -L*kf_, 0,    L*kf_, 0,
+               km_,   -km_,  km_,   -km_;
+
+    return SMatrix;}
+
+};
+
 class SimpleQuaternionModel {
  public:
   void Dynamics(double *x_dot, const double *x, const double *u) const;
