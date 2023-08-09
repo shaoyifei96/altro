@@ -163,12 +163,34 @@ class quadMPC {
     fmt::print("Set Cost Finished!\n");
 
     // Constraints
-    // auto steering_angle_con = [](a_float *c, const a_float *x, const a_float *u) {
-    //   (void)u;
-    //   a_float delta_max = 60 * M_PI / 180.0;
-    //   c[0] = x[3] - delta_max;
-    //   c[1] = -delta_max - x[3];
-    // };
+    const a_float max_thrust = max_thrust_per_prop;
+    const a_float min_thrust = min_thrust_per_prop;
+    auto actuator_con = [max_thrust, min_thrust](a_float *c, const a_float *x, const a_float *u) {
+      (void)x;
+      // < 0 format
+      c[0] = u[0] - max_thrust;
+      c[1] = u[1] - max_thrust;
+      c[2] = u[2] - max_thrust;
+      c[3] = u[3] - max_thrust;
+      c[4] = min_thrust - u[0];
+      c[5] = min_thrust - u[1];
+      c[6] = min_thrust - u[2];
+      c[7] = min_thrust - u[3];
+    };
+    auto actuator_jac = [](a_float *jac, const a_float *x, const a_float *u) {
+      (void)x;
+      (void)u;
+      Eigen::Map<Eigen::Matrix<a_float, 8, 17>> J(jac);
+      J.setZero();
+      J(0, 13) = 1.0;
+      J(1, 14) = 1.0;
+      J(2, 15) = 1.0;
+      J(3, 16) = 1.0;
+      J(4, 13) = -1.0;
+      J(5, 14) = -1.0;
+      J(6, 15) = -1.0;
+      J(7, 16) = -1.0;
+    };
     // auto steering_angle_jac = [](a_float *jac, const a_float *x, const a_float *u) {
     //   (void)x;
     //   (void)u;
@@ -177,9 +199,9 @@ class quadMPC {
     //   J(0, 3) = 1.0;
     //   J(1, 3) = -1.0;
     // };
-    // err = solver.SetConstraint(steering_angle_con, steering_angle_jac, 2, ConstraintType::INEQUALITY,
-    //                            "steering angle bound", 0, N + 1);
-    // fmt::print("Set Constraints Finished!\n");
+    err = solver.SetConstraint(actuator_con, actuator_jac, 8, ConstraintType::INEQUALITY,
+                               "Actuator Min Max", 0, N + 1);
+    fmt::print("Set Constraints Finished!\n");
 
     // Initial State
     err = solver.SetInitialState(x0.data(), n);
@@ -206,6 +228,8 @@ class quadMPC {
     Vector Qd;
     Vector Rd;
     Vector Qdf;
+    a_float max_thrust_per_prop = 6;
+    a_float min_thrust_per_prop = 0;
 
     ExplicitDynamicsFunction dyn;
     ExplicitDynamicsJacobian jac;
@@ -245,15 +269,19 @@ class quadMPC {
       std::vector<float> t_sim;
       float t_now = 0;
       for (int k = 0; k <= N; k++) {
+
         Eigen::VectorXd x(n);
         solver.GetState(x.data(), k);
         t_sim.emplace_back(t_now);
         t_now += solver.GetTimeStep(k);
+        std::cout<< k << std::endl;
+        std::cout<< x.transpose() << std::endl;
         X_sim.emplace_back(x);
         if (k != N) {
           Eigen::VectorXd u(m);
           solver.GetInput(u.data(), k);
           U_sim.emplace_back(u);
+          std::cout<< u.transpose() << std::endl<< std::endl;
         }
       }
 
@@ -370,9 +398,9 @@ class quadMPC {
 
 
 int main(int argc, char **argv) {
-  altro::ALTROSolver solver(10);
-  solver.SetDimension(13, 4, 0, altro::LastIndex);
-  fmt::print("Solver Initialized!\n");
+  // altro::ALTROSolver solver(10);
+  // solver.SetDimension(13, 4, 0, altro::LastIndex);
+  // fmt::print("Solver Initialized!\n");
 
   quadMPC mpc_solver;
   mpc_solver.SetUp();
