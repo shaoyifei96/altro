@@ -56,3 +56,16 @@ target_link_libraries(main
   nlohmann_json::nlohmann_json
 )
 
+add_executable(main_bicycle
+  main_bicycle.cpp
+)
+target_link_libraries(main_bicycle
+  PRIVATE
+  altro::altro
+  altro::test_utils
+  fmt::fmt
+  Eigen3::Eigen
+  nlohmann_json::nlohmann_json
+)
+
+

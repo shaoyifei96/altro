@@ -59,7 +59,7 @@ class quadMPC {
       model_ptr->Jacobian_fd(jac, x, u);
     };
     dyn = MidpointDynamics(n, m, dyn0);
-    jac = MidpointJacobian(n, m, dyn0, jac_dt);
+    jac = MidpointJacobian(n, m, dyn0, jac0);
 
 
 
@@ -79,7 +79,7 @@ class quadMPC {
     const int n_not_const = 13;
     Eigen::Matrix<double,n_not_const,1> x0;
     // x0 << 2.0, 1.0, -1.0,   -0.752,  0.443,  0.443, -0.206,  0.5,-0.5,1.0, 0.8,0.8,0.8;
-    x0 << 2.0, 1.0, -1.0,  1.0,  0,   0, 0,  0.5,-0.5,0, 0.,0.,0.;
+    x0 << 2.0, 1.0, -1.0,   0.933,   0.250,    0.250, 0.067,  0.5,-0.5,1, 0.2,-1.,1.;
     Eigen::Matrix<double,n_not_const,1> xf;
     xf << 0.0, 0.0, 0.0,   1.0, 0.0, 0.0, 0.0,  0,0,0, 0,0,0;
     Eigen::Vector4d u_ref_single = Vector::Constant(m, model_ptr->get_hover_input());

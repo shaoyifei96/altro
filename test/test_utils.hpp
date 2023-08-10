@@ -80,6 +80,7 @@ class quadModel {
   //   Eigen::MatrixXd& jac,
   //   const double eps);
   void finite_jacobian_quad_xu(double *jac, const double *x, const double *u) const;
+  // Eigen::Matrix<double, 3, 4> quat_jacobian( Eigen::Vector4d &q,  Eigen::Vector3d &vb)const;
   
   static constexpr int NumStates = 13;
   static constexpr int NumInputs = 4;

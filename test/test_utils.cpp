@@ -534,6 +534,16 @@ void quadModel::Jacobian_fd(double *jac, const double *x, const double *u) const
 
 
 }
+
+// Eigen::Matrix<double, 3, 4> quadModel::quat_jacobian(  Eigen::Vector4d &q,   Eigen::Vector3d &vb) const {
+//   double q_w = q[0];
+//   Eigen::Vector3d q_vec = q.segment<3>(1);
+//   Eigen::Matrix<double, 3, 4> J;
+//   J.setZero();
+//   J.block<3,1>(0,3) = 2.0*(q_w*vb+q_vec.cross(vb));
+//   J.block<3,3>(0,4) = 2.0*(q_vec.transpose()*vb*Eigen::MatrixXd::Identity(3, 3)+q_vec*vb.transpose()- vb*q_vec.transpose()-q_w*altro::skew(vb));
+//   return J;
+// }
 void quadModel::Jacobian(double *jac, const double *x, const double *u) const {
   Eigen::Map<Eigen::Matrix<double, 13, 17>> J(jac);  // jac = [dfc_dx, dfc_du]
   J.setZero();
@@ -553,13 +563,23 @@ void quadModel::Jacobian(double *jac, const double *x, const double *u) const {
 
   // Calculate dfc_dx
   Eigen::MatrixXd dfc_dx(13, 13);
+  
   dfc_dx.setZero();
   // dvw/dq ????
-  Eigen::MatrixXd dQdq = altro::dQdq(q);
-                            //1 x 3             3x4
-  dfc_dx.block<1, 4>(0, 3) = (vb.transpose() * dQdq.block<3, 4>(0, 0));
-  dfc_dx.block<1, 4>(1, 3) = (vb.transpose() * dQdq.block<3, 4>(3, 0));
-  dfc_dx.block<1, 4>(2, 3) = (vb.transpose() * dQdq.block<3, 4>(6, 0));
+  // Eigen::MatrixXd dQdq = altro::dQdq(q);
+  //                           //1 x 3             3x4
+  // dfc_dx.block<1, 4>(0, 3) = (vb.transpose() * dQdq.block<3, 4>(0, 0));
+  // dfc_dx.block<1, 4>(1, 3) = (vb.transpose() * dQdq.block<3, 4>(3, 0));
+  // dfc_dx.block<1, 4>(2, 3) = (vb.transpose() * dQdq.block<3, 4>(6, 0));
+  double q_w = q[0];
+  Eigen::Vector3d q_vec = q.segment<3>(1);
+  Eigen::Matrix<double, 3, 4> JJ;
+  JJ.setZero();
+  JJ.block<3,1>(0,3) = 2.0*(q_w*vb+q_vec.cross(vb));
+  JJ.block<3,3>(0,4) = 2.0*(q_vec.transpose()*vb*Eigen::MatrixXd::Identity(3, 3)+q_vec*vb.transpose()- vb*q_vec.transpose()-q_w*altro::skew(vb));
+  dfc_dx.block<3, 4>(0,3) = JJ;
+  
+  
 
   // dvw/dvb
   dfc_dx.block<3, 3>(0, 7) = Q;
@@ -581,10 +601,16 @@ void quadModel::Jacobian(double *jac, const double *x, const double *u) const {
   dfc_dx(6, 11) = 0.5 * x_vec(4);   // 0.5qa
   dfc_dx(6, 12) = 0.5 * x_vec(3);   // 0.5qs
   //dvbdot/dq // ADDED - sign here, not sure if correct
-  Eigen::MatrixXd dQinv_dq = altro::dQdq(inv_q);
-  dfc_dx.block<1, 4>(7, 3) = -(g_vec.transpose() * dQinv_dq.block<3, 4>(0, 0));
-  dfc_dx.block<1, 4>(8, 3) = -(g_vec.transpose() * dQinv_dq.block<3, 4>(3, 0));
-  dfc_dx.block<1, 4>(9, 3) = -(g_vec.transpose() * dQinv_dq.block<3, 4>(6, 0));
+  // Eigen::MatrixXd dQinv_dq = altro::dQdq(inv_q);
+  // dfc_dx.block<1, 4>(7, 3) = -(g_vec.transpose() * dQinv_dq.block<3, 4>(0, 0));
+  // dfc_dx.block<1, 4>(8, 3) = -(g_vec.transpose() * dQinv_dq.block<3, 4>(3, 0));
+  // dfc_dx.block<1, 4>(9, 3) = -(g_vec.transpose() * dQinv_dq.block<3, 4>(6, 0));
+
+  Eigen::Matrix<double, 3, 4> JJ2;
+  JJ2.setZero();
+  JJ2.block<3,1>(0,3) = 2.0*(q_w*g_vec+q_vec.cross(g_vec));
+  JJ2.block<3,3>(0,4) = 2.0*(-q_vec.transpose()*g_vec*Eigen::MatrixXd::Identity(3, 3)+-q_vec*g_vec.transpose()- g_vec*-q_vec.transpose()-q_w*altro::skew(g_vec));
+  dfc_dx.block<3, 4>(7,3) = JJ2;
 
 
   // dvbdot/dvb

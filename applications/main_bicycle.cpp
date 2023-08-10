@@ -150,7 +150,7 @@ class BicycleMPC {
   public:
     void eg1() {
       a_float cost_initial = solver.CalcCost();
-      fmt::print("Initial cost = {}\n", cost_initial);
+
 
       solver.OpenLoopRollout();
       cost_initial = solver.CalcCost();
@@ -158,11 +158,15 @@ class BicycleMPC {
 
       // Solve
       AltroOptions opts;
-      opts.verbose = Verbosity::Inner;
+      opts.verbose = Verbosity::LineSearch;
       opts.iterations_max = 80;
       opts.use_backtracking_linesearch = true;
       solver.SetOptions(opts);
       SolveStatus status = solver.Solve();
+      cost_initial = solver.CalcCost();
+      fmt::print("Final cost = {}\n", cost_initial);
+      
+
     }
     void eg2() {
       fmt::print("#############################################\n");
@@ -187,7 +191,7 @@ class BicycleMPC {
 
       // Solve
       AltroOptions opts;
-      opts.verbose = Verbosity::Silent;
+      opts.verbose = Verbosity::LineSearch;
       opts.iterations_max = 80;
       opts.use_backtracking_linesearch = true;
       solver.SetOptions(opts);
