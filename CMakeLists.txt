@@ -52,17 +52,28 @@ endif()
 
 find_package(catkin REQUIRED)
 
+
+add_subdirectory(deps)
+
 catkin_package(
- INCLUDE_DIRS src src/altro/solver
+ INCLUDE_DIRS src 
  LIBRARIES altro
  CATKIN_DEPENDS 
- DEPENDS 
+ DEPENDS
+)
+find_package (Eigen3 3.4 REQUIRED)
+
+
+add_subdirectory(src)
+
+
+add_dependencies(altro
+  ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+  ${catkin_EXPORTED_TARGETS}
 )
 
 
+add_executable(main main.cpp)
+target_link_libraries(main PRIVATE altro fmt::fmt Eigen3::Eigen)
 
-add_subdirectory(deps)
-find_package (Eigen3 3.4 REQUIRED)
-
-add_subdirectory(src)
 

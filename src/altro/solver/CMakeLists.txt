@@ -1,4 +1,4 @@
-add_library(altro_impl STATIC
+add_library(altro_impl 
   typedefs.hpp
   internal_types.hpp
 
