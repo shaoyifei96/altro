@@ -2,10 +2,12 @@
 # - PROJECT_IS_TOP_LEVEL (3.21)
 # - FILE_SETS (3.23)
 cmake_minimum_required(VERSION 3.23)
-list(APPEND CMAKE_MESSAGE_CONTEXT altro)
-project(altro VERSION 0.1.0)
+project(altro)
+include(FetchContent)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 cmake_policy(SET CMP0077 NEW)
 
 # Organization info
@@ -13,14 +15,14 @@ set(ORGANIZATION_NAME_FULL "Robotic Exploration Lab")
 set(ORGANIZATION_NAME "rexlab")
 
 # Include needed modules
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-include(CMakePrintHelpers)
-message(STATUS "GOOD-1")
-include(FetchContent)
-message(STATUS "GOOD0")
-include(AltroCMakeFunctions)
-include(FindThreads)
-include(GNUInstallDirs)
+# list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+# include(CMakePrintHelpers)
+# message(STATUS "GOOD-1")
+# include(FetchContent)
+# message(STATUS "GOOD0")
+# include(AltroCMakeFunctions)
+# include(FindThreads)
+# include(GNUInstallDirs)
 
 #############################################
 # Options
@@ -33,32 +35,9 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE ${ALTRO_DEFAULT_BUILD_TYPE} CACHE STRING "Choose the type of build." FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
-message(STATUS "GOOD1")
-# Enable testing
-option(ALTRO_BUILD_TESTS "Build tests for altro" ON)
-if (${ALTRO_BUILD_TESTS})
-  FetchContent_Declare(googletest
-    GIT_REPOSITORY https://github.com/google/googletest
-    GIT_TAG 58d77fa8070e8cec2dc1ed015d66b454c8d78850
-    )
-  FetchContent_MakeAvailable(googletest)
-  enable_testing()
-  include(GoogleTest)
-  include(CTest)
-endif()
-message(STATUS "GOOD2")
-# Code Coverage
-option(ALTRO_CODECOV "Compile altro with code coverage" OFF)
-if (ALTRO_CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-  message(STATUS "Compiler altro with coverage info.")
-  add_compile_options(-O0 -g -fprofile-arcs -ftest-coverage)
-endif()
-
-# Documentation
-option(ALTRO_BUILD_DOCS "Build documentation for altro." OFF)
 
 # Use -fPIC option
-#option(ALTRO_POSITION_INDEPENDENT_CODE "Use -fPIC flag when compiling altro" ON)
+option(BUILD_SHARED_LIBS "Build Shared" OFF)
 if (BUILD_SHARED_LIBS)
 #  set(CMAKE_POSITION_INDEPENDENT_CODE ON FORCE)
   message(STATUS "Building shared library.")
@@ -66,57 +45,24 @@ if (BUILD_SHARED_LIBS)
 else()
   message(STATUS "Building static library. Note that a shared library is recommended.")
 endif()
-message(STATUS "GOOD3")
-# Set default install prefix to /opt/rexlab/altro
-if(NOT WIN32 AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT AND PROJECT_IS_TOP_LEVEL)
-  message(STATUS "Setting Altro install prefix to /opt/${ORGANIZATION_NAME}/${PROJECT_NAME}")
-  set(CMAKE_INSTALL_PREFIX "/opt/${ORGANIZATION_NAME}/${PROJECT_NAME}" CACHE FILEPATH "Base install location" FORCE)
-  set(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OFF)
-endif()
-message(STATUS "GOOD4")
-# Arduino library installation
-option(ALTRO_ENABLE_RUNTIME_EXCEPTIONS "Enable C++ runtime exceptions. If disabled, error return codes will be returned instead." OFF)
-option(ALTRO_ENABLE_ARDUINO_LIB_INSTALL "Add the install_arduino_lib target"  OFF)
-set(ALTRO_ARDUINO_LIB_INSTALL_DIR $ENV{HOME}/Arduino/libraries CACHE FILEPATH "Directory where the altro Arduino library should be installed")
-cmake_print_variables(ALTRO_ARDUINO_LIB_INSTALL_DIR)
 
 #############################################
 # Dependencies
 #############################################
+
+find_package(catkin REQUIRED)
+
+catkin_package(
+ INCLUDE_DIRS src src/altro/solver
+ LIBRARIES altro
+ CATKIN_DEPENDS 
+ DEPENDS 
+)
+
+
+
 add_subdirectory(deps)
 find_package (Eigen3 3.4 REQUIRED)
-#############################################
-# Documentation
-#############################################
 
-if (ALTRO_BUILD_DOCS)
-  message(STATUS "Adding altro_docs target to build documentation.")
-  add_subdirectory(docs EXCLUDE_FROM_ALL)
-endif()
-
-
-#############################################
-# Build
-#############################################
-
-# Output all binaries
-add_compile_options(-Wall -Wextra)
 add_subdirectory(src)
-
-#############################################
-# Testing
-#############################################
-
-if (${ALTRO_BUILD_TESTS})
-  message(STATUS "Building altro testing suite.")
-  add_subdirectory(test)
-endif()
-
-
-#############################################
-# Installation
-#############################################
-add_subdirectory(install)
-
-add_subdirectory(applications)
 
