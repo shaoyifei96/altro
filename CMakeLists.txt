@@ -8,7 +8,7 @@ include(FetchContent)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-cmake_policy(SET CMP0077 NEW)
+# cmake_policy(SET CMP0077 NEW)
 
 # Organization info
 set(ORGANIZATION_NAME_FULL "Robotic Exploration Lab")
@@ -37,14 +37,14 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # Use -fPIC option
-option(BUILD_SHARED_LIBS "Build Shared" OFF)
-if (BUILD_SHARED_LIBS)
-#  set(CMAKE_POSITION_INDEPENDENT_CODE ON FORCE)
-  message(STATUS "Building shared library.")
-  add_compile_options(-fPIC)
-else()
-  message(STATUS "Building static library. Note that a shared library is recommended.")
-endif()
+# option(BUILD_SHARED_LIBS "Build Shared" OFF)
+# if (BUILD_SHARED_LIBS)
+# #  set(CMAKE_POSITION_INDEPENDENT_CODE ON FORCE)
+#   message(STATUS "Building shared library.")
+#   add_compile_options(-fPIC)
+# else()
+#   message(STATUS "Building static library. Note that a shared library is recommended.")
+# endif()
 
 #############################################
 # Dependencies
@@ -67,13 +67,15 @@ find_package (Eigen3 3.4 REQUIRED)
 add_subdirectory(src)
 
 
-add_dependencies(altro
-  ${${PROJECT_NAME}_EXPORTED_TARGETS} 
-  ${catkin_EXPORTED_TARGETS}
-)
+# add_dependencies(altro
+#   ${${PROJECT_NAME}_EXPORTED_TARGETS} 
+#   ${catkin_EXPORTED_TARGETS}
+# )
 
 
 add_executable(main main.cpp)
 target_link_libraries(main PRIVATE altro fmt::fmt Eigen3::Eigen)
+target_include_directories(main
+  PUBLIC src)
 
 

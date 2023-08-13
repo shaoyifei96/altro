@@ -18,9 +18,7 @@ target_link_libraries(altro
   altro_impl
 )
 target_include_directories(altro
-  PUBLIC
-  $<BUILD_INTERFACE:${altro_SOURCE_DIR}/src>
-)
+  PUBLIC src)
 # set_target_properties(altro PROPERTIES EXPORT_NAME altro)
 # add_library(altro ALIAS altro)
 
