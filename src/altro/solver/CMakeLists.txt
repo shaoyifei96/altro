@@ -1,5 +1,5 @@
 add_library(altro_impl 
-  typedefs.hpp
+  # typedefs.hpp
   internal_types.hpp
 
   solver.hpp
@@ -11,13 +11,13 @@ add_library(altro_impl
   knotpoint_data.hpp
   knotpoint_data.cpp
 
-  solver_options.hpp
+  # solver_options.hpp
   solver_options.cpp
 
   solver_stats.cpp
   solver_stats.hpp
 
-  exceptions.hpp
+  # exceptions.hpp
   exceptions.cpp
 
   cones.cpp
@@ -42,6 +42,7 @@ target_link_libraries(altro_impl
 target_include_directories(altro_impl
   PUBLIC
   $<BUILD_INTERFACE:${altro_SOURCE_DIR}/src>
+  ../../../include/altro
 )
 
 set_target_properties(altro_impl PROPERTIES EXPORT_NAME impl)

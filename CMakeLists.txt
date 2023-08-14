@@ -56,7 +56,7 @@ find_package(catkin REQUIRED)
 add_subdirectory(deps)
 
 catkin_package(
- INCLUDE_DIRS src 
+ INCLUDE_DIRS include 
  LIBRARIES altro
  CATKIN_DEPENDS 
  DEPENDS
@@ -76,6 +76,6 @@ add_subdirectory(src)
 add_executable(main main.cpp)
 target_link_libraries(main PRIVATE altro fmt::fmt Eigen3::Eigen)
 target_include_directories(main
-  PUBLIC src)
+  PUBLIC include)
 
 

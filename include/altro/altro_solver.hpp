@@ -9,9 +9,9 @@
 #include <string>
 #include <vector>
 
-#include "altro/solver/exceptions.hpp"
-#include "altro/solver/solver_options.hpp"
-#include "altro/solver/typedefs.hpp"
+#include "exceptions.hpp"
+#include "solver_options.hpp"
+#include "typedefs.hpp"
 
 namespace altro {
 

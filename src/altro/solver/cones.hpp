@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "altro/solver/exceptions.hpp"
-#include "altro/solver/typedefs.hpp"
+#include "exceptions.hpp"
+#include "typedefs.hpp"
 
 namespace altro {
 

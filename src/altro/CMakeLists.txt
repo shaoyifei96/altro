@@ -2,23 +2,22 @@ add_subdirectory(solver)
 
 add_library(altro
 
-  altro.hpp
-  altro.cpp
-
-  altro_solver.hpp
+  # altro.hpp
+  # altro_solver.hpp
   altro_solver.cpp
 
-  utils/formatting.hpp
-  utils/quaternion_utils.hpp
+
   utils/quaternion_utils.cpp
 )
+target_include_directories(altro
+  PUBLIC ../../include 
+  PRIVATE utils)
 target_link_libraries(altro
   PRIVATE
   fmt::fmt
   altro_impl
 )
-target_include_directories(altro
-  PUBLIC src)
+
 # set_target_properties(altro PROPERTIES EXPORT_NAME altro)
 # add_library(altro ALIAS altro)
 
