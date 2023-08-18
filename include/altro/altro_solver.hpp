@@ -318,6 +318,7 @@ class ALTROSolver {
    * Initialization
    **********************************************/
   ErrorCodes Initialize();
+  ErrorCodes Deinitialize();
 
   /**
    * @brief Set the initial state

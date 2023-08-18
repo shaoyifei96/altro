@@ -7,9 +7,9 @@
 
 #include <memory>
 
-#include "linesearch/linesearch.hpp"
 #include "internal_types.hpp"
 #include "knotpoint_data.hpp"
+#include "linesearch/linesearch.hpp"
 #include "shifted_vector.hpp"
 #include "solver_options.hpp"
 #include "solver_stats.hpp"
@@ -26,8 +26,10 @@ class SolverImpl {
   bool IsInitialized() const { return is_initialized_; }
 
   ErrorCodes Initialize();
+  ErrorCodes Deinitialize();
+
   a_float CalcCost();
-//  a_float CalcObjective();
+  //  a_float CalcObjective();
   ErrorCodes OpenLoopRollout();
   ErrorCodes Solve();
 
@@ -52,11 +54,11 @@ class SolverImpl {
 
   // Problem definition
   int horizon_length_;
-  std::vector<int> nx_;   // number of states
-  std::vector<int> nu_;   // number of inputs
-  std::vector<int> nx_error_;   // number of error states
-  std::vector<int> nu_error_;   // number of error inputs
-  std::vector<float> h_;  // time steps
+  std::vector<int> nx_;        // number of states
+  std::vector<int> nu_;        // number of inputs
+  std::vector<int> nx_error_;  // number of error states
+  std::vector<int> nu_error_;  // number of error inputs
+  std::vector<float> h_;       // time steps
   Vector initial_state_;
 
   // Solver
@@ -77,7 +79,6 @@ class SolverImpl {
   a_float rho_;
   int ls_iters_;
 
-
  private:
   bool constraint_vals_up_to_date_ = false;
   bool constraint_jacs_up_to_date_ = false;
@@ -91,40 +92,40 @@ class SolverImpl {
 
   // TVLQR data arrays
   //   Note data is actually stored in data_, these are just pointers to that data to call tvlqr
-  std::vector<a_float*> x_;
-  std::vector<a_float*> u_;
-  std::vector<a_float*> y_;
+  std::vector<a_float *> x_;
+  std::vector<a_float *> u_;
+  std::vector<a_float *> y_;
 
-  std::vector<a_float*> A_;
-  std::vector<a_float*> B_;
-  std::vector<a_float*> f_;
+  std::vector<a_float *> A_;
+  std::vector<a_float *> B_;
+  std::vector<a_float *> f_;
 
-  std::vector<a_float*> error_A_;
-  std::vector<a_float*> error_B_;
+  std::vector<a_float *> error_A_;
+  std::vector<a_float *> error_B_;
 
-  std::vector<a_float*> lxx_;
-  std::vector<a_float*> luu_;
-  std::vector<a_float*> lux_;
-  std::vector<a_float*> lx_;
-  std::vector<a_float*> lu_;
+  std::vector<a_float *> lxx_;
+  std::vector<a_float *> luu_;
+  std::vector<a_float *> lux_;
+  std::vector<a_float *> lx_;
+  std::vector<a_float *> lu_;
 
-  std::vector<a_float*> K_;
-  std::vector<a_float*> d_;
+  std::vector<a_float *> K_;
+  std::vector<a_float *> d_;
 
-  std::vector<a_float*> P_;
-  std::vector<a_float*> p_;
+  std::vector<a_float *> P_;
+  std::vector<a_float *> p_;
 
-  std::vector<a_float*> Qxx_;
-  std::vector<a_float*> Quu_;
-  std::vector<a_float*> Qux_;
-  std::vector<a_float*> Qx_;
-  std::vector<a_float*> Qu_;
+  std::vector<a_float *> Qxx_;
+  std::vector<a_float *> Quu_;
+  std::vector<a_float *> Qux_;
+  std::vector<a_float *> Qx_;
+  std::vector<a_float *> Qu_;
 
-  std::vector<a_float*> Qxx_tmp_;
-  std::vector<a_float*> Quu_tmp_;
-  std::vector<a_float*> Qux_tmp_;
-  std::vector<a_float*> Qx_tmp_;
-  std::vector<a_float*> Qu_tmp_;
+  std::vector<a_float *> Qxx_tmp_;
+  std::vector<a_float *> Quu_tmp_;
+  std::vector<a_float *> Qux_tmp_;
+  std::vector<a_float *> Qx_tmp_;
+  std::vector<a_float *> Qu_tmp_;
   a_float delta_V_[2];
 
   bool is_initialized_ = false;

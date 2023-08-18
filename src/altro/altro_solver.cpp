@@ -24,6 +24,11 @@ altro::ALTROSolver::~ALTROSolver() = default;
 /////////////////////////////////////////////
 // Setters
 /////////////////////////////////////////////
+ErrorCodes ALTROSolver::Deinitialize() {
+  solver_->Deinitialize();
+  return ErrorCodes::NoError;
+}
+
 ErrorCodes ALTROSolver::SetDimension(int num_states, int num_inputs, int k_start, int k_stop) {
   if (IsInitialized()) {
     return ALTRO_THROW("Cannot change the dimension once the solver has been initialized.",

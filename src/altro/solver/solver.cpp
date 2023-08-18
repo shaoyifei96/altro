@@ -55,6 +55,12 @@ SolverImpl::SolverImpl(int N)
   }
 }
 
+ErrorCodes SolverImpl::Deinitialize() {
+  if (!IsInitialized()) return ErrorCodes::SolverNotInitialized;
+  is_initialized_ = false;
+  return ErrorCodes::NoError;
+}
+
 ErrorCodes SolverImpl::Initialize() {
   // Initialize knot point data
   ErrorCodes err;
