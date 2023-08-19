@@ -270,6 +270,7 @@ ErrorCodes SolverImpl::ForwardPass(a_float* alpha) {
   auto phi = [this](double alpha, double* phi, double* dphi) {
     this->MeritFunction(alpha, phi, dphi);
   };
+  // std::cout << "alpha " << *alpha << std::endl;
   phi(0.0, &phi0_, &dphi0_);
   if (abs(dphi0_) < opts.tol_meritfun_gradient) {
     *alpha = 0.0;
@@ -296,6 +297,8 @@ ErrorCodes SolverImpl::ForwardPass(a_float* alpha) {
   if (std::isnan(*alpha) || !(res == linesearch::CubicLineSearch::ReturnCodes::MINIMUM_FOUND ||
                               res == linesearch::CubicLineSearch::ReturnCodes::HIT_MAX_STEPSIZE)) {
     // TODO: Provide a more fine-grained return code
+    if (std::isnan(*alpha)) std::cout << "alpha is nan!" << std::endl;
+
     return ALTRO_THROW(fmt::format("Line search failed with code {}", (int)(res)),
                        ErrorCodes::LineSearchFailed);
   }
@@ -319,7 +322,7 @@ ErrorCodes SolverImpl::MeritFunction(a_float alpha, a_float* phi, a_float* dphi)
     // Compute the control
     KnotPointData& knot_point = data_[k];
     KnotPointData& next_knot_point = data_[k + 1];
-
+    // std::cout << "k = " << k << std::endl;
     Vector dx;
     if (opts.use_quaternion) {
       knot_point.CalcErrorState();
