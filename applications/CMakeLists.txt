@@ -12,7 +12,7 @@ add_library(finitediff
 target_link_libraries(altro_test_utils
   PUBLIC
   gtest_main
-  altro::altro
+  altro
   fmt::fmt
   Eigen3::Eigen
   altro_impl
@@ -49,7 +49,7 @@ add_executable(main
 )
 target_link_libraries(main
   PRIVATE
-  altro::altro
+  altro
   altro::test_utils
   fmt::fmt
   Eigen3::Eigen
@@ -61,7 +61,7 @@ add_executable(main_bicycle
 )
 target_link_libraries(main_bicycle
   PRIVATE
-  altro::altro
+  altro
   altro::test_utils
   fmt::fmt
   Eigen3::Eigen

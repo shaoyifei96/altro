@@ -7,23 +7,22 @@
 
 // }
 
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <string>
+
+#include "../test/test_utils.hpp"
 #include "Eigen/Dense"
 #include "altro/altro.hpp"
 #include "fmt/core.h"
-#include "../test/test_utils.hpp"
-#include <chrono>
-#include <fstream>
-#include <filesystem>
-#include <string>
-#include <iostream>
 #include "nlohmann/json.hpp"
 // #include <unsupported/Eigen/AutoDiff>
 // #include "gtest/gtest.h"
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
-
-using Eigen::MatrixXd;
 using Eigen::MatrixXd;
 // using Eigen::Vector;
 
@@ -34,17 +33,21 @@ using Eigen::VectorXi;
 
 // const std::string ALTRO_TEST_DIR ="/home/yifei/Documents/optimal_ctrl/try_altro";
 
-
 class quadMPC {
  public:
   quadMPC() : solver(N) {}
+
   void SetUp() {
     ErrorCodes err;
     // Objective
-    std::cout<< "Size of Problem N = "<< N << std::endl;
-    Qd = Vector::Constant(n, 1e-2);
-    Rd = Vector::Constant(m, 1e-3);
-    Qdf = Vector::Constant(n, 1e1);
+    std::cout << "Size of Problem N = " << N << std::endl;
+    Qd = Vector::Constant(n, 0);
+    Rd = Vector::Constant(m, 0.1);
+    Qdf = Vector::Constant(n, 0);
+    const int three = 3;
+    Qd.segment<3>(0) = Vector::Constant(three, 0.1);
+    Qdf.segment<3>(0) = Vector::Constant(three, 0.1);
+    Qdf.segment<3>(7) = Vector::Constant(three, 0.1);
 
     // Dynamics
     auto model_ptr = std::make_shared<quadModel>();
@@ -59,16 +62,13 @@ class quadMPC {
       model_ptr->Jacobian_fd(jac, x, u);
     };
     dyn = MidpointDynamics(n, m, dyn0);
-    jac = MidpointJacobian(n, m, dyn0, jac0);
-
-
+    jac = MidpointJacobian(n, m, dyn0, jac_dt);
 
     // Dimension and Time step
     err = solver.SetDimension(n, m);
     const int en = 12;
     const int em = 4;
     err = solver.SetErrorDimension(en, em);
-
 
     // Dynamics
     err = solver.SetExplicitDynamics(dyn, jac);
@@ -77,16 +77,17 @@ class quadMPC {
     int N_ref = 30;
     float t_ref = 2;
     const int n_not_const = 13;
-    Eigen::Matrix<double,n_not_const,1> x0;
+    Eigen::Matrix<double, n_not_const, 1> x0;
     // x0 << 2.0, 1.0, -1.0,   -0.752,  0.443,  0.443, -0.206,  0.5,-0.5,1.0, 0.8,0.8,0.8;
-    x0 << 2.0, 1.0, -1.0,   0.933,   0.250,    0.250, 0.067,  0.5,-0.5,1, 0.2,-1.,1.;
-    Eigen::Matrix<double,n_not_const,1> xf;
-    xf << 0.0, 0.0, 0.0,   1.0, 0.0, 0.0, 0.0,  0,0,0, 0,0,0;
+    x0 << 2.0, 1.0, -1.0, 0.933, 0.250, 0.250, 0.067, 0, 0, 0, 0, 0, 0;
+    Eigen::Matrix<double, n_not_const, 1> xf;
+    xf << 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0;
     Eigen::Vector4d u_ref_single = Vector::Constant(m, model_ptr->get_hover_input());
     std::cout << "u_ref_single = " << u_ref_single << std::endl;
     // u_ref_single[0] = -1;
-    // ReadScottyTrajectory(&N_ref, &t_ref, &x_ref, &u_ref); // this is where we should input the dispersion planner data
-    //wrong dimension!!
+    // ReadScottyTrajectory(&N_ref, &t_ref, &x_ref, &u_ref); // this is where we should input the
+    // dispersion planner data
+    // wrong dimension!!
     // fmt::print("Trajectory Read!\n");
     // // for (int k = 0; k <= N; ++k) {
     // //   std::cout << "x_ref[" << k << "] = " << x_ref[k].transpose() << std::endl;
@@ -94,43 +95,42 @@ class quadMPC {
     // // }
     // Vector x_dot_expected_1(13);
     // Vector x_dot_expected_2(13);
-    Matrix jac_calc(13,17);
-    Matrix jac_fd(13,17);
-    
+    Matrix jac_calc(13, 17);
+    Matrix jac_fd(13, 17);
+
     // Eigen::Matrix<double,n_not_const,1> x0_perturb;
     // x0_perturb << 2.01, 0.01, 0.01,   1.01, 0.01, 0.01, 0.01,  0.01,0.01,0.01, 0.01,0.01,0.01;
 
-
-    //see if dynamics works
-    // dyn0(x_dot_expected_1.data(), x0.data(), u_ref_single.data());
-    // dyn0(x_dot_expected_2.data(), x0_perturb.data(), u_ref_single.data());
-    // Matrix jac_expected(13,13);
-    // jac_expected = 1.0/0.01*(x_dot_expected_2 - x_dot_expected_1);
+    // see if dynamics works
+    //  dyn0(x_dot_expected_1.data(), x0.data(), u_ref_single.data());
+    //  dyn0(x_dot_expected_2.data(), x0_perturb.data(), u_ref_single.data());
+    //  Matrix jac_expected(13,13);
+    //  jac_expected = 1.0/0.01*(x_dot_expected_2 - x_dot_expected_1);
 
     // std::cout << "countinous dynamics passed "<< std::endl;
     // std::cout << "jac_expected = " << jac_expected << std::endl;
     jac0(jac_calc.data(), x0.data(), u_ref_single.data());
-    std::cout<< "jac_calc = "  << std::endl;
+    std::cout << "jac_calc = " << std::endl;
     std::cout << jac_calc << std::endl;
 
     jac_dt(jac_fd.data(), x0.data(), u_ref_single.data());
     std::cout << "jac_fd = " << std::endl;
-    std::cout << jac_fd<< std::endl;
-
+    std::cout << jac_fd << std::endl;
 
     Eigen::MatrixXd diff_jac = jac_calc - jac_fd;
 
-      // Define a threshold for what is considered close to zero
+    // Define a threshold for what is considered close to zero
     double threshold = 1e-2;
 
     std::cout << "Rows and columns where the elements are not close to zero:\n";
 
-      // Iterate over the elements
+    // Iterate over the elements
     bool all_passed = true;
     for (int i = 0; i < diff_jac.rows(); ++i) {
       for (int j = 0; j < diff_jac.cols(); ++j) {
-        if (std::abs(diff_jac(i,j)) > threshold) {
-          std::cout << "Row: " << i << ", Column: " << j << " value ana: " << jac_calc(i,j) << " fd: " << jac_fd(i,j) << std::endl;
+        if (std::abs(diff_jac(i, j)) > threshold) {
+          std::cout << "Row: " << i << ", Column: " << j << " value ana: " << jac_calc(i, j)
+                    << " fd: " << jac_fd(i, j) << std::endl;
           all_passed = false;
         }
       }
@@ -139,8 +139,7 @@ class quadMPC {
       std::cout << "CONTRATS, jacobian passed!!!!!\n";
     }
 
-
-    a_float * Qd_data = this->Qd.data();
+    a_float *Qd_data = this->Qd.data();
     std::cout << "Qd = " << Qd_data[0] << std::endl;
     std::cout << "N_ref" << N_ref << std::endl;
 
@@ -152,14 +151,20 @@ class quadMPC {
     fmt::print("Set TimeStep Finished!\n");
     PrintErrorCode(err);
     // Set Tracking Cost Function
-    for (int k = 0; k <= N-1; ++k) {
+    for (int k = 0; k <= N - 1; ++k) {
       // std::cout << k << std::endl;
       err = solver.SetLQRCost(n, m, Qd.data(), Rd.data(), xf.data(), u_ref_single.data(), k);
+      // err = solver.SetQuaternionCost(n, m, Qd.data(), Rd.data(), 1.0, xf.data(),
+      // u_ref_single.data(), k);
+
       // PrintErrorCode(err);
       // fmt::print("Print error\n");
     }
-      err = solver.SetLQRCost(n, m, Qdf.data(), Rd.data(), xf.data(), u_ref_single.data(), N);
-      PrintErrorCode(err);
+    err = solver.SetLQRCost(n, m, Qdf.data(), Rd.data(), xf.data(), u_ref_single.data(), N);
+    // err = solver.SetQuaternionCost(n, m, Qdf.data(), Rd.data(), 1.0, xf.data(),
+    // u_ref_single.data(), N);
+
+    PrintErrorCode(err);
     fmt::print("Set Cost Finished!\n");
 
     // Constraints
@@ -217,185 +222,187 @@ class quadMPC {
       solver.SetState(xf.data(), n, k);
     }
     fmt::print("State and input Set!\n");
-
   }
-  protected:
-    const int n = quadModel::NumStates;
-    const int m = quadModel::NumInputs;
-    const int N = 30;
-    float h;
 
-    Vector Qd;
-    Vector Rd;
-    Vector Qdf;
-    a_float max_thrust_per_prop = 6;
-    a_float min_thrust_per_prop = 0;
+ protected:
+  const int n = quadModel::NumStates;
+  const int m = quadModel::NumInputs;
+  const int N = 30;
+  float h;
 
-    ExplicitDynamicsFunction dyn;
-    ExplicitDynamicsJacobian jac;
+  Vector Qd;
+  Vector Rd;
+  Vector Qdf;
+  a_float max_thrust_per_prop = 10;
+  a_float min_thrust_per_prop = 0;
 
-    ALTROSolver solver;
+  ExplicitDynamicsFunction dyn;
+  ExplicitDynamicsJacobian jac;
 
-    // Reference Trajectory (the "Scotty Dog")
-    std::vector<Eigen::Matrix<double, 13, 1>> x_ref;
-    std::vector<Eigen::Vector4d> u_ref;
-    Vector u0;
+  ALTROSolver solver;
 
-  public:
-    void eg1() {
-      a_float cost_initial = solver.CalcCost();
-      fmt::print("Initial cost = {}\n", cost_initial);
+  // Reference Trajectory (the "Scotty Dog")
+  std::vector<Eigen::Matrix<double, 13, 1>> x_ref;
+  std::vector<Eigen::Vector4d> u_ref;
+  Vector u0;
 
-      solver.OpenLoopRollout();
-      cost_initial = solver.CalcCost();
-      fmt::print("Initial cost = {}\n", cost_initial);
+ public:
+  void eg1() {
+    a_float cost_initial = solver.CalcCost();
+    fmt::print("Initial cost = {}\n", cost_initial);
 
-      // Solve
-      AltroOptions opts;
-      opts.verbose = Verbosity::Silent;
-      opts.iterations_max = 80;
-      opts.use_backtracking_linesearch = true;
-      opts.use_quaternion = false;
-      opts.quat_start_index = 3;  // THIS IS VERY IMPORTANT!
-      solver.SetOptions(opts);
-      SolveStatus status = solver.Solve();
+    solver.OpenLoopRollout();
+    cost_initial = solver.CalcCost();
+    fmt::print("Initial cost = {}\n", cost_initial);
 
-      std::cout << "Solve status is: " << static_cast<unsigned int>(status) << std::endl; 
-      cost_initial = solver.CalcCost();
-      fmt::print("Final cost = {}\n", cost_initial);
-      
-      std::vector<Vector> X_sim;
-      std::vector<Vector> U_sim;
-      std::vector<float> t_sim;
-      float t_now = 0;
-      for (int k = 0; k <= N; k++) {
+    // Solve
+    AltroOptions opts;
+    opts.verbose = Verbosity::Silent;
+    opts.iterations_max = 80;
+    opts.use_backtracking_linesearch = true;
+    opts.use_quaternion = false;
+    opts.quat_start_index = 3;  // THIS IS VERY IMPORTANT!
+    // opts.tol_meritfun_gradient = 1e-4;
+    // opts.tol_stationarity = 1e-3;
+    // opts.tol_cost = 1e-3;
 
-        Eigen::VectorXd x(n);
-        solver.GetState(x.data(), k);
-        t_sim.emplace_back(t_now);
-        t_now += solver.GetTimeStep(k);
-        std::cout<< k << std::endl;
-        std::cout<< x.transpose() << std::endl;
-        X_sim.emplace_back(x);
-        if (k != N) {
-          Eigen::VectorXd u(m);
-          solver.GetInput(u.data(), k);
-          U_sim.emplace_back(u);
-          std::cout<< u.transpose() << std::endl<< std::endl;
-        }
+    solver.SetOptions(opts);
+    SolveStatus status = solver.Solve();
+
+    std::cout << "Solve status is: " << static_cast<unsigned int>(status) << std::endl;
+    cost_initial = solver.CalcCost();
+    fmt::print("Final cost = {}\n", cost_initial);
+
+    std::vector<Vector> X_sim;
+    std::vector<Vector> U_sim;
+    std::vector<float> t_sim;
+    float t_now = 0;
+    for (int k = 0; k <= N; k++) {
+      Eigen::VectorXd x(n);
+      solver.GetState(x.data(), k);
+      t_sim.emplace_back(t_now);
+      t_now += solver.GetTimeStep(k);
+      std::cout << k << std::endl;
+      std::cout << x.transpose() << std::endl;
+      X_sim.emplace_back(x);
+      if (k != N) {
+        Eigen::VectorXd u(m);
+        solver.GetInput(u.data(), k);
+        U_sim.emplace_back(u);
+        std::cout << u.transpose() << std::endl << std::endl;
       }
-
-      // Save trajectory to JSON file
-      std::filesystem::path test_dir = ALTRO_TEST_DIR;
-      std::filesystem::path out_file = test_dir / "quad_test.json";
-      std::ofstream traj_out(out_file);
-      json X_data(X_sim);
-      json U_data(U_sim);
-      json data;
-      // data["reference_state"] = X_ref_data;
-      // data["reference_input"] = U_ref_data;
-      data["state_trajectory"] = X_data;
-      data["input_trajectory"] = U_data;
-      data["time"] = t_sim;
-      traj_out << std::setw(4) << data;
     }
-    void eg2() {
-      fmt::print("#############################################\n");
-      fmt::print("                 MPC Solve\n");
-      fmt::print("#############################################\n");
-      // MPC Setup
-      int Nsim = 200;
-      int mpc_iter = 0;
-      std::vector<Vector> x_sim;
-      std::vector<Vector> u_sim;
-      std::vector<int> solve_iters;
-      std::vector<double> tracking_error;
-      x_sim.reserve(Nsim + 1);
-      u_sim.reserve(Nsim);
-      solve_iters.reserve(Nsim);
-      tracking_error.reserve(Nsim);
-      x_sim.emplace_back(x_ref[0]);  // push initial state to the front
-      for (int i = 0; i < Nsim; ++i) {
-        x_sim.emplace_back(Vector::Zero(n));
-        u_sim.emplace_back(Vector::Zero(m));
-      }
 
-      // Solve
-      AltroOptions opts;
-      opts.verbose = Verbosity::Silent;
-      opts.iterations_max = 80;
-      opts.use_backtracking_linesearch = true;
-      solver.SetOptions(opts);
+    // Save trajectory to JSON file
+    std::filesystem::path test_dir = ALTRO_TEST_DIR;
+    std::filesystem::path out_file = test_dir / "quad_test.json";
+    std::ofstream traj_out(out_file);
+    json X_data(X_sim);
+    json U_data(U_sim);
+    json data;
+    // data["reference_state"] = X_ref_data;
+    // data["reference_input"] = U_ref_data;
+    data["state_trajectory"] = X_data;
+    data["input_trajectory"] = U_data;
+    data["time"] = t_sim;
+    traj_out << std::setw(4) << data;
+  }
 
-      // Initialize variables
-      SolveStatus status;
-      a_float c_u = 0.5 * u0.dot(Rd.asDiagonal() * u0);
-      a_float c;
-      Vector q(n);
-      Vector u_mpc(m);
-
-      auto t_start = std::chrono::high_resolution_clock::now();
-      while (mpc_iter < Nsim) {
-        // Solve nonlinear MPC problem
-        status = solver.Solve();
-        solve_iters.emplace_back(solver.GetIterations());
-
-        // Get control
-        solver.GetInput(u_sim[mpc_iter].data(), 0);
-
-        // Simulate the system forward
-        dyn(x_sim[mpc_iter + 1].data(), x_sim[mpc_iter].data(), u_sim[mpc_iter].data(), h);
-
-        // Get error from reference
-        tracking_error.emplace_back((x_sim[mpc_iter + 1] - x_ref[mpc_iter + 1]).norm());
-
-        // Set new reference trajectory
-        ++mpc_iter;
-        for (int k = 0; k <= N; ++k) {
-          const Vector& xk_ref = x_ref[k + mpc_iter];
-          q.noalias() = Qd.asDiagonal() * xk_ref;
-          q *= -1;
-          c = 0.5 * q.dot(xk_ref);
-          c *= -1;
-          if (k < N) {
-            c += c_u;
-          }
-          solver.UpdateLinearCosts(q.data(), nullptr, c, k);
-        }
-
-        // Set Initial state
-        solver.SetInitialState(x_sim[mpc_iter].data(), n);
-
-        // Shift the trajectory
-        solver.ShiftTrajectory();
-      }
-      auto t_end = std::chrono::high_resolution_clock::now();
-      using SecondsDouble = std::chrono::duration<double, std::ratio<1>>;
-      SecondsDouble t_total = std::chrono::duration_cast<SecondsDouble>(t_end - t_start);
-      // fmt::print("Total time = {}\n", t_total);
-      // fmt::print("Average rate = {} Hz\n", Nsim / t_total.count());
-
-      // Save trajectory to JSON file
-      fs::path test_dir = ALTRO_TEST_DIR;
-      fs::path out_file = test_dir / "scotty_mpc.json";
-      std::cout<<out_file<<std::endl;
-      std::ofstream traj_out(out_file);
-      json x_data(x_sim);
-      json u_data(u_sim);
-      json iters_data(solve_iters);
-      json err_data(tracking_error);
-      json data;
-      data["state_trajectory"] = x_data;
-      data["input_trajectory"] = u_data;
-      data["N"] = Nsim;
-      data["tf"] = Nsim * h;
-      data["solve_iters"] = iters_data;
-      data["tracking_error"] = err_data;
-      traj_out << std::setw(4) << data;
+  void eg2() {
+    fmt::print("#############################################\n");
+    fmt::print("                 MPC Solve\n");
+    fmt::print("#############################################\n");
+    // MPC Setup
+    int Nsim = 200;
+    int mpc_iter = 0;
+    std::vector<Vector> x_sim;
+    std::vector<Vector> u_sim;
+    std::vector<int> solve_iters;
+    std::vector<double> tracking_error;
+    x_sim.reserve(Nsim + 1);
+    u_sim.reserve(Nsim);
+    solve_iters.reserve(Nsim);
+    tracking_error.reserve(Nsim);
+    x_sim.emplace_back(x_ref[0]);  // push initial state to the front
+    for (int i = 0; i < Nsim; ++i) {
+      x_sim.emplace_back(Vector::Zero(n));
+      u_sim.emplace_back(Vector::Zero(m));
     }
+
+    // Solve
+    AltroOptions opts;
+    opts.verbose = Verbosity::Silent;
+    opts.iterations_max = 200;
+    opts.use_backtracking_linesearch = true;
+    solver.SetOptions(opts);
+
+    // Initialize variables
+    SolveStatus status;
+    a_float c_u = 0.5 * u0.dot(Rd.asDiagonal() * u0);
+    a_float c;
+    Vector q(n);
+    Vector u_mpc(m);
+
+    auto t_start = std::chrono::high_resolution_clock::now();
+    while (mpc_iter < Nsim) {
+      // Solve nonlinear MPC problem
+      status = solver.Solve();
+      solve_iters.emplace_back(solver.GetIterations());
+
+      // Get control
+      solver.GetInput(u_sim[mpc_iter].data(), 0);
+
+      // Simulate the system forward
+      dyn(x_sim[mpc_iter + 1].data(), x_sim[mpc_iter].data(), u_sim[mpc_iter].data(), h);
+
+      // Get error from reference
+      tracking_error.emplace_back((x_sim[mpc_iter + 1] - x_ref[mpc_iter + 1]).norm());
+
+      // Set new reference trajectory
+      ++mpc_iter;
+      for (int k = 0; k <= N; ++k) {
+        const Vector &xk_ref = x_ref[k + mpc_iter];
+        q.noalias() = Qd.asDiagonal() * xk_ref;
+        q *= -1;
+        c = 0.5 * q.dot(xk_ref);
+        c *= -1;
+        if (k < N) {
+          c += c_u;
+        }
+        solver.UpdateLinearCosts(q.data(), nullptr, c, k);
+      }
+
+      // Set Initial state
+      solver.SetInitialState(x_sim[mpc_iter].data(), n);
+
+      // Shift the trajectory
+      solver.ShiftTrajectory();
+    }
+    auto t_end = std::chrono::high_resolution_clock::now();
+    using SecondsDouble = std::chrono::duration<double, std::ratio<1>>;
+    SecondsDouble t_total = std::chrono::duration_cast<SecondsDouble>(t_end - t_start);
+    // fmt::print("Total time = {}\n", t_total);
+    // fmt::print("Average rate = {} Hz\n", Nsim / t_total.count());
+
+    // Save trajectory to JSON file
+    fs::path test_dir = ALTRO_TEST_DIR;
+    fs::path out_file = test_dir / "scotty_mpc.json";
+    std::cout << out_file << std::endl;
+    std::ofstream traj_out(out_file);
+    json x_data(x_sim);
+    json u_data(u_sim);
+    json iters_data(solve_iters);
+    json err_data(tracking_error);
+    json data;
+    data["state_trajectory"] = x_data;
+    data["input_trajectory"] = u_data;
+    data["N"] = Nsim;
+    data["tf"] = Nsim * h;
+    data["solve_iters"] = iters_data;
+    data["tracking_error"] = err_data;
+    traj_out << std::setw(4) << data;
+  }
 };
-
-
 
 int main(int argc, char **argv) {
   // altro::ALTROSolver solver(10);
@@ -405,8 +412,7 @@ int main(int argc, char **argv) {
   quadMPC mpc_solver;
   mpc_solver.SetUp();
 
-  
-    fmt::print("Setup success\n");
+  fmt::print("Setup success\n");
 
   mpc_solver.eg1();
   //     fmt::print("eg1 success\n");

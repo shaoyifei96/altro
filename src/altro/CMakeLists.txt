@@ -22,7 +22,7 @@ target_include_directories(altro_altro2
   $<BUILD_INTERFACE:${altro_SOURCE_DIR}/src>
 )
 set_target_properties(altro_altro2 PROPERTIES EXPORT_NAME altro)
-add_library(altro::altro ALIAS altro_altro2)
+add_library(altro ALIAS altro_altro2)
 
 
 target_sources(altro_altro2
