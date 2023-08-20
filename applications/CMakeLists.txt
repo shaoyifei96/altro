@@ -1,13 +1,9 @@
 add_library(altro_test_utils
-  ../test/test_utils.hpp
   ../test/test_utils.cpp
-  ../test/
-)
-
-add_library(finitediff 
   finitediff.hpp
   finitediff.cpp
-) 
+)
+
 
 target_link_libraries(altro_test_utils
   PUBLIC
@@ -16,18 +12,11 @@ target_link_libraries(altro_test_utils
   fmt::fmt
   Eigen3::Eigen
   altro_impl
-  finitediff
 
   PRIVATE
   nlohmann_json::nlohmann_json
 )
-add_library(altro::test_utils ALIAS altro_test_utils)
 
-
-target_link_libraries(finitediff
-  PUBLIC
-  Eigen3::Eigen
-  )
 # FetchContent_Declare(
 #     finite-diff
 #     GIT_REPOSITORY https://github.com/zfergus/finite-diff.git
@@ -50,22 +39,22 @@ add_executable(main
 target_link_libraries(main
   PRIVATE
   altro
-  altro::test_utils
+  altro_test_utils
   fmt::fmt
   Eigen3::Eigen
   nlohmann_json::nlohmann_json
 )
 
-add_executable(main_bicycle
-  main_bicycle.cpp
-)
-target_link_libraries(main_bicycle
-  PRIVATE
-  altro
-  altro::test_utils
-  fmt::fmt
-  Eigen3::Eigen
-  nlohmann_json::nlohmann_json
-)
+# add_executable(main_bicycle
+#   main_bicycle.cpp
+# )
+# target_link_libraries(main_bicycle
+#   PRIVATE
+#   altro
+#   altro::test_utils
+#   fmt::fmt
+#   Eigen3::Eigen
+#   nlohmann_json::nlohmann_json
+# )
 
 

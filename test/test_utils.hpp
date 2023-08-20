@@ -71,7 +71,7 @@ class quadModel {
 
   void Dynamics(double *x_dot, const double *x, const double *u) const;
   void Jacobian(double *jac, const double *x, const double *u) const;
-  void Jacobian_fd(double *jac, const double *x, const double *u) const;
+  void Jacobian_fdxxx(double *jac, const double *x, const double *u) const;
   Eigen::Vector3d moments( const Eigen::VectorXd& u) const;
   Eigen::Vector3d forces(  const Eigen::VectorXd& u) const;
   // Eigen::VectorXd f_quad(const Eigen::VectorXd& x_vec, const Eigen::VectorXd& u_vec) const;

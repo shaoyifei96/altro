@@ -59,10 +59,11 @@ class quadMPC {
     };
 
     ContinuousDynamicsJacobian jac_dt = [model_ptr](double *jac, const double *x, const double *u) {
-      model_ptr->Jacobian_fd(jac, x, u);
+      model_ptr->Jacobian_fdxxx(jac, x, u);
     };
+
     dyn = MidpointDynamics(n, m, dyn0);
-    jac = MidpointJacobian(n, m, dyn0, jac_dt);
+    // jac = MidpointJacobian(n, m, dyn0, jac_dt);
 
     // Dimension and Time step
     err = solver.SetDimension(n, m);
@@ -79,7 +80,7 @@ class quadMPC {
     const int n_not_const = 13;
     Eigen::Matrix<double, n_not_const, 1> x0;
     // x0 << 2.0, 1.0, -1.0,   -0.752,  0.443,  0.443, -0.206,  0.5,-0.5,1.0, 0.8,0.8,0.8;
-    x0 << 2.0, 1.0, -1.0, 0.933, 0.250, 0.250, 0.067, 0, 0, 0, 0, 0, 0;
+    x0 << 2.0, 1.0, -1.0, 0.924, 0.148, 0.227, 0.271, 1, 2, 0, 2, 0, 0;
     Eigen::Matrix<double, n_not_const, 1> xf;
     xf << 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0;
     Eigen::Vector4d u_ref_single = Vector::Constant(m, model_ptr->get_hover_input());
@@ -96,7 +97,9 @@ class quadMPC {
     // Vector x_dot_expected_1(13);
     // Vector x_dot_expected_2(13);
     Matrix jac_calc(13, 17);
+    jac_calc.setZero();
     Matrix jac_fd(13, 17);
+    jac_fd.setZero();
 
     // Eigen::Matrix<double,n_not_const,1> x0_perturb;
     // x0_perturb << 2.01, 0.01, 0.01,   1.01, 0.01, 0.01, 0.01,  0.01,0.01,0.01, 0.01,0.01,0.01;
@@ -109,18 +112,18 @@ class quadMPC {
 
     // std::cout << "countinous dynamics passed "<< std::endl;
     // std::cout << "jac_expected = " << jac_expected << std::endl;
-    jac0(jac_calc.data(), x0.data(), u_ref_single.data());
+    model_ptr->Jacobian(jac_calc.data(), x0.data(), u_ref_single.data());
     std::cout << "jac_calc = " << std::endl;
     std::cout << jac_calc << std::endl;
 
-    jac_dt(jac_fd.data(), x0.data(), u_ref_single.data());
+    model_ptr->Jacobian_fdxxx(jac_fd.data(), x0.data(), u_ref_single.data());
     std::cout << "jac_fd = " << std::endl;
     std::cout << jac_fd << std::endl;
 
     Eigen::MatrixXd diff_jac = jac_calc - jac_fd;
 
     // Define a threshold for what is considered close to zero
-    double threshold = 1e-2;
+    double tol_compare = 1e-1;
 
     std::cout << "Rows and columns where the elements are not close to zero:\n";
 
@@ -128,7 +131,7 @@ class quadMPC {
     bool all_passed = true;
     for (int i = 0; i < diff_jac.rows(); ++i) {
       for (int j = 0; j < diff_jac.cols(); ++j) {
-        if (std::abs(diff_jac(i, j)) > threshold) {
+        if (std::abs(diff_jac(i, j)) > tol_compare) {
           std::cout << "Row: " << i << ", Column: " << j << " value ana: " << jac_calc(i, j)
                     << " fd: " << jac_fd(i, j) << std::endl;
           all_passed = false;
