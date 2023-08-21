@@ -1,7 +1,7 @@
 # Used 3.23 features
 # - PROJECT_IS_TOP_LEVEL (3.21)
 # - FILE_SETS (3.23)
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.20)
 project(altro)
 include(FetchContent)
 
@@ -9,7 +9,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # cmake_policy(SET CMP0077 NEW)
-
+FetchContent_Declare(eigen
+  GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+  GIT_TAG 3147391d946bb4b6c68edd901f2add6ac1f31f8c  # version 3.4.0
+  )
+FetchContent_MakeAvailable(eigen)
 # Organization info
 set(ORGANIZATION_NAME_FULL "Robotic Exploration Lab")
 set(ORGANIZATION_NAME "rexlab")
@@ -61,7 +65,7 @@ catkin_package(
  CATKIN_DEPENDS 
  DEPENDS
 )
-find_package (Eigen3 3.4 REQUIRED)
+# find_package (Eigen3 3.4 REQUIRED)
 
 
 add_subdirectory(src)
