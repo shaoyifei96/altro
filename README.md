@@ -1,6 +1,10 @@
 # altro
 A Fast Solver for Constrained Trajectory Optimization
 
+This is a fork that works for a quadrotor in a ros noetic environment. This is tested on a Falcon 250 from KumarLab.
+
+See [kr_ilqr_optimizer](https://github.com/KumarRobotics/kr_ilqr_optimizer) for integration with the kr_autonomous_flight stack.
+
 # Installation
 
 ## CMake FetchContent
